@@ -2,26 +2,13 @@
 import base64
 import datetime
 import os
+from django.conf import settings
 import requests
 from requests.auth import HTTPBasicAuth
 
-from dotenv import load_dotenv
-load_dotenv()
-
-MPESA_BASE_API_URL = os.environ.get("MPESA_BASE_API_URL")
-
-short_code = os.environ.get("SHORTCODE")
-consumer_key = os.environ.get("CONSUMER_KEY")
-consumer_secret = os.environ.get("CONSUMER_SECRET")
-passkey = os.environ.get("PASSKEY")
-
-timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-password = base64.b64encode(f"{short_code}{passkey}{timestamp}".encode('utf-8')).decode('utf-8')
-callback_url = os.environ.get("CALLBACK_URL")
-
 
 def get_mpesa_token(consumerKey=None, consumerSecret=None):
-    url = f"{MPESA_BASE_API_URL}/oauth/v1/generate?grant_type=client_credentials"
+    url = f"{settings.MPESA_BASE_API_URL}/oauth/v1/generate?grant_type=client_credentials"
     resp = requests.get(url, auth=HTTPBasicAuth(
         consumerKey, consumerSecret), timeout=60)
     if not resp.status_code == 200:
@@ -32,51 +19,57 @@ def get_mpesa_token(consumerKey=None, consumerSecret=None):
     return access_token
 
 
-def send_stk_push():
-    token = get_mpesa_token(consumer_key, consumer_secret)
+def send_stk_push(phone_number, amount, trans_ref, description=None):
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode(f"{settings.MPESA_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}".encode('utf-8')).decode('utf-8')
+
+    token = get_mpesa_token(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
     headers = {
         "Authorization": f"Bearer {token}"
     }
-    
-    phone_number = "STK PUSH phone number"
-    amount = "amount"
-    trans_ref = "your reference"
 
     payload = {
-        "BusinessShortCode": short_code,
+        "BusinessShortCode": settings.MPESA_SHORTCODE,
         "Password": password,
         "Timestamp": timestamp,
-        "TransactionType": os.environ.get("TRANS_TYPE"),
+        "TransactionType": settings.MPESA_TRANS_TYPE,
         "Amount": amount,
         "PartyA": phone_number,
-        "PartyB": os.environ.get("PARTY_B", short_code),
+        "PartyB": settings.MPESA_PARTY_B,
         "PhoneNumber": phone_number,
-        "CallBackURL": callback_url,
+        "CallBackURL": f'{settings.HOSTING_DOMAIN}/payment/confirmation/',
         "AccountReference": trans_ref,
-        "TransactionDesc": f"a description"
+        "TransactionDesc": description
     }
 
-    url = f"{MPESA_BASE_API_URL}/mpesa/stkpush/v1/processrequest"
+    url = f"{settings.MPESA_BASE_API_URL}/mpesa/stkpush/v1/processrequest"
     resp = requests.post(url, json=payload, headers=headers)
     json_resp = resp.json()
     print(json_resp)
+    return json_resp
 
 
-def query_status():
-        url = f"{MPESA_BASE_API_URL}/mpesa/stkpushquery/v1/query"
+def query_status(CheckoutRequestID):
+    
+    url = f"{settings.MPESA_BASE_API_URL}/mpesa/stkpushquery/v1/query"
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode(f"{settings.MPESA_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}".encode('utf-8')).decode('utf-8')
 
-        payload = {
-            "BusinessShortCode": short_code,
-            "Password": password,
-            "Timestamp": timestamp,
-            "CheckoutRequestID": "" #STK_PUSH request ID from response
-        }
+    payload = {
+        "BusinessShortCode": settings.MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "CheckoutRequestID": CheckoutRequestID #STK_PUSH request ID from response
+    }
 
-        token = get_mpesa_token(consumer_key, consumer_secret)
-        headers = {
-            "Authorization": f"Bearer {token}"
-        }
+    token = get_mpesa_token(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
 
-        resp = requests.post(url, json=payload, headers=headers)
-        json_resp = resp.json()
-        print(json_resp)
+    resp = requests.post(url, json=payload, headers=headers)
+    json_resp = resp.json()
+    print(json_resp)
+    return json_resp
+
+
