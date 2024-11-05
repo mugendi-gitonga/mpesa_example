@@ -5,10 +5,10 @@ from core.models import STKPushRequest
 
 
 class STKPushSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(required=True)
-    amount = serializers.IntegerField(required=True)
-    trans_ref = serializers.CharField()
-    description = serializers.CharField()
+    phone_number = serializers.CharField()
+    amount = serializers.IntegerField()
+    trans_ref = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
 
     class Meta:
         model = STKPushRequest

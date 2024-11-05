@@ -38,7 +38,7 @@ def send_stk_push(phone_number, amount, trans_ref, description=None):
         "PartyB": settings.MPESA_PARTY_B,
         "PhoneNumber": phone_number,
         "CallBackURL": f'{settings.HOSTING_DOMAIN}/payment/confirmation/',
-        "AccountReference": trans_ref,
+        "AccountReference": trans_ref if trans_ref else phone_number,
         "TransactionDesc": description
     }
 

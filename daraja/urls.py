@@ -15,14 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from core.views import MpesaConfirmation, MpesaValidation, STKPush
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    path('payment/stk-push/', STKPush.as_view(), name='send-stk-push'),
-    path('payment/validation/', MpesaValidation.as_view(), name='payment-validation-view'),
-    path('payment/confirmation/', MpesaConfirmation.as_view(), name='payment-confirmation-view'),
+    
+    path('api/v1/', include([
+        path('payment/stk-push/', STKPush.as_view(), name='send-stk-push'),
+        path('payment/validation/', MpesaValidation.as_view(), name='payment-validation-view'),
+        path('payment/confirmation/', MpesaConfirmation.as_view(), name='payment-confirmation-view'),
+    ]))
 ]
